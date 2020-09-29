@@ -4,8 +4,15 @@
 \alias{databaseGetCities}
 \title{Returns a list of cities}
 \usage{
-databaseGetCities(country_id = "", region_id = "", q = "",
-  need_all = "1", offset = "", count = "100", v = getAPIVersion())
+databaseGetCities(
+  country_id = "",
+  region_id = "",
+  q = "",
+  need_all = "1",
+  offset = "",
+  count = "100",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{country_id}{Country ID}
@@ -30,4 +37,3 @@ Returns a list of cities
 databaseGetCities(country_id=1, need_all=0)
 }
 }
-

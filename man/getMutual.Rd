@@ -4,15 +4,22 @@
 \alias{getMutual}
 \title{Returns a list of user IDs of the mutual friends of two users}
 \usage{
-getMutual(source_id = "", target_uid = "", target_uids = "", order = "",
-  count = "", offset = "", v = getAPIVersion())
+getMutual(
+  source_id = "",
+  target_uid = "",
+  target_uids = "",
+  order = "",
+  count = "",
+  offset = "",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{source_id}{ID of the user whose friends will be checked against the friends of the user specified in target_uid}
 
 \item{target_uid}{ID of the user whose friends will be checked against the friends of the user specified in source_uid}
 
-\item{target_uids}{List of target uids}
+\item{target_uids}{List of target uids (list of comma-separated positive numbers, the maximum number of elements allowed is 100)}
 
 \item{order}{Sort order}
 
@@ -30,4 +37,3 @@ Returns a list of user IDs of the mutual friends of two users
 mutual_friends <- getMutual(target_uid=1)
 }
 }
-

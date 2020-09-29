@@ -4,8 +4,13 @@
 \alias{getUsers}
 \title{Returns detailed information on users}
 \usage{
-getUsers(user_ids = "", fields = "", name_case = "", flatten = FALSE,
-  v = getAPIVersion())
+getUsers(
+  user_ids = "",
+  fields = "",
+  name_case = "nom",
+  flatten = FALSE,
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{user_ids}{User IDs or screen names (screen_name). By default, current user ID (the maximum number of elements allowed is 1000)}
@@ -196,4 +201,3 @@ Returns detailed information on users
 user <- getUsers('1', fields='sex,bdate,city')
 }
 }
-

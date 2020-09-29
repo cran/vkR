@@ -4,9 +4,17 @@
 \alias{getFriends}
 \title{Returns a list of user IDs or detailed information about a user's friends}
 \usage{
-getFriends(user_id = "", order = "", list_id = "", count = "",
-  offset = "", fields = "", name_case = "", flatten = FALSE,
-  v = getAPIVersion())
+getFriends(
+  user_id = "",
+  order = "",
+  list_id = "",
+  count = "",
+  offset = "",
+  fields = "",
+  name_case = "",
+  flatten = FALSE,
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{user_id}{User ID. By default, the current user ID}
@@ -36,4 +44,3 @@ friends_list <- getFriends(user_id=1, order='name', fields='bdate')
 friends <- friends_list$items
 }
 }
-

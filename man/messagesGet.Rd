@@ -4,9 +4,16 @@
 \alias{messagesGet}
 \title{Returns a list of the current user's incoming or outgoing private messages}
 \usage{
-messagesGet(out = "", offset = "", count = "", time_offset = "",
-  filters = "", preview_length = "", last_message_id = "",
-  v = getAPIVersion())
+messagesGet(
+  out = "",
+  offset = "",
+  count = "",
+  time_offset = "",
+  filters = "",
+  preview_length = "",
+  last_message_id = "",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{out}{1 - to return outgoing messages; 0 - to return incoming messages (default)}
@@ -28,4 +35,3 @@ messagesGet(out = "", offset = "", count = "", time_offset = "",
 \description{
 Returns a list of the current user's incoming or outgoing private messages
 }
-

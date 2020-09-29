@@ -1,9 +1,16 @@
 [![Travis-CI Build Status](https://travis-ci.org/Dementiy/vkR.svg?branch=master)](https://travis-ci.org/Dementiy/vkR)
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/vkR)](https://CRAN.R-project.org/package=vkR/)
 
 `vkR` is an R package which provides access to the [VKontakte](https://vk.com/) (VK) API.
 
 ## Installation
 
+To get the current released version from CRAN:
+```r
+install.packages("vkR")
+```
+
+To get the current development version from github:
 ``` r
 install.packages("devtools")
 devtools::install_github("Dementiy/vkR")
@@ -30,6 +37,69 @@ setAccessToken(access_token = 'YOUR ACCESS TOKEN')
 ```
 
 ## Example of use
+
+At your own risk you can use mongodb and [mongolite](https://github.com/jeroen/mongolite) package for storing data:
+
+```r
+> db_init()
+> wall <- getWallExecute(domain="data_mining_in_action", count=0, use_db=TRUE, progress_bar=TRUE)
+|======================...======================| 100%
+> show_collections()
+    db            collection       suffix count
+1 temp data_mining_in_action         wall   232
+```
+
+If connection was aborted by some reasons we don't lose our data:
+```r
+> wall <- getWallExecute(domain='privivkanet', count=0, use_db = T, progress_bar = T)
+|=================                              |  25%
+Show Traceback
+ 
+ Rerun with Debug
+ Error in curl::curl_fetch_memory(url, handle = handle) : 
+  Operation was aborted by an application callback ...
+> show_collections()
+    db            collection       suffix count
+1 temp data_mining_in_action         wall   232
+2 temp           privivkanet         wall   916
+> wall <- getWallExecute(domain='privivkanet', count=0, offset=916, use_db = T, progress_bar = T)
+|======================...======================| 100%
+> show_collections()
+    db            collection       suffix count
+1 temp data_mining_in_action         wall   232
+2 temp           privivkanet         wall  3664
+```
+
+You can specify the collection name:
+```r
+> wall <- getWallExecute(domain="data_mining_in_action", count=0, 
+        use_db=TRUE, db_params=list('collection'='dm', 'suffix'='posts'), progress_bar=TRUE)
+|======================...======================| 100%
+> show_collections()
+    db            collection       suffix count
+1 temp data_mining_in_action         wall   232
+2 temp           privivkanet         wall  3664
+3 temp                    dm        posts   232
+
+> friends <- getFriends()
+> users <- getUsersExecute(friends$items, use_db = TRUE, db_params=list('collection'='my_friends'), progress_bar = TRUE)
+> show_collections()
+    db            collection       suffix count
+1 temp data_mining_in_action         wall   232
+2 temp           privivkanet         wall  3664
+3 temp                    dm        posts   232
+4 temp            my_friends                141
+```
+
+For load collection into a namespace you can use `db_load_collection` function:
+```r
+> db_load_collection('data_mining_in_action', 'wall')
+ Imported 232 records. Simplifying into dataframe...
+> ls()
+[1] "temp.data_mining_in_action.wall"
+> nrow(temp.data_mining_in_action.wall)
+[1] 232
+```
 
 Building a Friend Graph:
 

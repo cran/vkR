@@ -4,9 +4,19 @@
 \alias{getWallExecute}
 \title{Returns a list of posts on a user wall or community wall}
 \usage{
-getWallExecute(owner_id = "", domain = "", offset = 0, count = 10,
-  filter = "owner", extended = "", fields = "", progress_bar = FALSE,
-  v = getAPIVersion())
+getWallExecute(
+  owner_id = "",
+  domain = "",
+  offset = 0,
+  count = 10,
+  filter = "owner",
+  extended = "",
+  fields = "",
+  use_db = FALSE,
+  db_params = list(),
+  progress_bar = FALSE,
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{owner_id}{ID of the user or community that owns the wall. By default, current user ID. Use a negative value to designate a community ID.}
@@ -30,6 +40,10 @@ getWallExecute(owner_id = "", domain = "", offset = 0, count = 10,
 
 \item{fields}{List of comma-separated words}
 
+\item{use_db}{Use database}
+
+\item{db_params}{Collection name and suffix}
+
 \item{progress_bar}{Display progress bar}
 
 \item{v}{Version of API}
@@ -52,4 +66,3 @@ Returns a list of posts on a user wall or community wall
 wall <- getWallExecute(domain='spbrug', count=0, progress_bar=TRUE)
 }
 }
-

@@ -180,9 +180,9 @@
 #' }
 #' @importFrom utils URLencode
 #' @export
-getUsers <- function(user_ids='', fields='', name_case='', flatten=FALSE, v=getAPIVersion()) {
+getUsers <- function(user_ids='', fields='', name_case='nom', flatten=FALSE, v=getAPIVersion()) {
   .Deprecated("getUsersExecute()")
-  body <- list(fields = fields, name_case = name_case)
+  body <- list(fields = profile_fields(fields), name_case = name_case)
   if (length(user_ids) > 1) {
     user_ids <- paste(user_ids, collapse = ",")
     body <- append(body, list(user_ids = user_ids))
@@ -191,8 +191,8 @@ getUsers <- function(user_ids='', fields='', name_case='', flatten=FALSE, v=getA
     query <- queryBuilder('users.get', user_ids = user_ids, v = v)
   }
   request_delay()
-  response <- jsonlite::fromJSON(rawToChar(httr::POST(URLencode(query),
-                                                      body = body)$content))
+  response <- jsonlite::fromJSON(httr::content(
+    httr::POST(URLencode(query), body = body), "text", encoding = "UTF-8"))
 
   if (has_error(response))
     return(try_handle_error(response))
@@ -214,6 +214,8 @@ getUsers <- function(user_ids='', fields='', name_case='', flatten=FALSE, v=getA
 #' @param name_case Case for declension of user name and surname
 #' @param drop Drop deleted or banned users
 #' @param flatten Automatically flatten nested data frames into a single non-nested data frame
+#' @param use_db Use database
+#' @param db_params Collection name and suffix
 #' @param progress_bar Display progress bar
 #' @param v Version of API
 #' @details
@@ -392,9 +394,9 @@ getUsers <- function(user_ids='', fields='', name_case='', flatten=FALSE, v=getA
 #' }
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
-getUsersExecute <- function(users_ids, fields='', name_case='', drop=FALSE, flatten=FALSE, progress_bar=FALSE, v=getAPIVersion())
+getUsersExecute <- function(users_ids, fields='', name_case='nom', drop=FALSE, flatten=FALSE, use_db=FALSE, db_params=list(), progress_bar=FALSE, v=getAPIVersion())
 {
-  get_users <- function(user_ids='', fields='', name_case='', v=getAPIVersion()) {
+  get_users <- function(user_ids='', fields='', name_case='nom', v=getAPIVersion()) {
     code <- 'var users = [];'
     num_requests <- ifelse(length(user_ids) %% 500 == 0, (length(user_ids) %/% 500), (length(user_ids) %/% 500) + 1)
     from <- 1
@@ -412,6 +414,7 @@ getUsersExecute <- function(users_ids, fields='', name_case='', drop=FALSE, flat
     execute(code)
   }
 
+  fields <- profile_fields(fields)
   if (missing(users_ids)) {
     code <- paste0('return API.users.get({"fields":"', fields, '", "name_case":"', name_case, '", "v":"', v, '"});')
     response <- execute(code)
@@ -423,6 +426,18 @@ getUsersExecute <- function(users_ids, fields='', name_case='', drop=FALSE, flat
   if ("vk.friends.ids" %in% class(users_ids))
     users_ids <- unique(unlist(users_ids))
   users_ids <- as.integer(users_ids)
+  users_ids <- users_ids[!is.na(users_ids)]
+
+  if (length(users_ids) == 0)
+    stop('"users_ids" has no user IDs', call. = FALSE)
+
+  if (use_db) {
+    collection <- or(db_params[['collection']], 'users')
+    suffix <- or(db_params[['suffix']], '')
+    key <- or(db_params[['key']], 'id')
+    if (!collection_exists(collection, suffix))
+      create_empty_collection(collection, suffix)
+  }
 
   all_users <- data.frame()
   from <- 1
@@ -438,7 +453,9 @@ getUsersExecute <- function(users_ids, fields='', name_case='', drop=FALSE, flat
     if (to >= length(users_ids)) to <- length(users_ids)
 
     users <- get_users(users_ids[from:to], fields = fields, name_case = name_case, v = v)
-    all_users <- jsonlite::rbind.pages(list(all_users, users))
+    if (use_db)
+      db_update(object = users, key = key, collection = collection, suffix = suffix, upsert = TRUE)
+    all_users <- jsonlite::rbind_pages(list(all_users, users))
 
     if (progress_bar)
       setTxtProgressBar(pb, nrow(all_users))
@@ -508,6 +525,7 @@ usersGetFollowers <- function(user_id='', offset=0, count=0, fields='', name_cas
     execute(code)
   }
 
+  fields <- profile_fields(fields)
   if (isTRUE(drop) && fields == '')
     fields <- 'deactivated'
 
@@ -519,7 +537,14 @@ usersGetFollowers <- function(user_id='', offset=0, count=0, fields='', name_cas
                  "name_case":"', name_case, '",
                  "v":"', v, '"});')
 
-  response <- execute(code)
+  result <- tryCatch(
+    response <- execute(code),
+    vk_error18 = function(e) list(followers = list(), count = 0)
+  )
+
+  if (result$count == 0)
+    return(result)
+
   followers <- response$items
   max_count <- ifelse((response$count - offset) > count & count != 0, count, response$count - offset)
 
@@ -537,16 +562,18 @@ usersGetFollowers <- function(user_id='', offset=0, count=0, fields='', name_cas
   }
 
   while (len(followers) < max_count) {
-    followers3000 <- get_followers(user_id = user_id,
-                                  offset = (1 + offset + offset_counter * 3000),
+    followers25000 <- get_followers(user_id = user_id,
+                                  offset = (1 + offset + offset_counter * 25000),
                                   count = (max_count - len(followers)),
                                   fields = fields,
                                   name_case = name_case,
                                   v = v)
     if (is.vector(followers))
-      followers <- append(followers, followers3000)
-    else
-      followers <- jsonlite::rbind.pages(list(followers, followers3000))
+      followers <- append(followers, followers25000)
+    else {
+      followers <- jsonlite::rbind_pages(list(followers, followers25000))
+      followers <- followers[!duplicated(followers$id), ]
+    }
 
     if (progress_bar)
       setTxtProgressBar(pb, len(followers))
@@ -556,6 +583,7 @@ usersGetFollowers <- function(user_id='', offset=0, count=0, fields='', name_cas
 
   if (progress_bar)
     close(pb)
+
   # for R CMD check to pass
   deactivated <- NULL
   if (isTRUE(drop) && "deactivated" %in% colnames(followers)) {
@@ -612,6 +640,7 @@ usersGetSubscriptions <- function(user_id='', extended='1', offset=0, count=0, f
   }
 
   user_id <- as.integer(user_id)
+  fields <- profile_fields(fields)
   code <- paste0('return API.users.getSubscriptions({"user_id":"', user_id, '",
                  "extended":"', 1, '",
                  "offset":"', offset, '",
@@ -641,7 +670,7 @@ usersGetSubscriptions <- function(user_id='', extended='1', offset=0, count=0, f
                                           fields = fields,
                                           extended = 1,
                                           v = v)
-    subscriptions <- jsonlite::rbind.pages(list(subscriptions, subscriptions600))
+    subscriptions <- jsonlite::rbind_pages(list(subscriptions, subscriptions600))
 
     if (progress_bar)
       setTxtProgressBar(pb, nrow(subscriptions))
@@ -715,7 +744,7 @@ usersSearch <- function(q='', sort='', offset='', count='20', fields='', city=''
                         sort = sort,
                         offset = offset,
                         count = count,
-                        fields = fields,
+                        fields = profile_fields(fields),
                         city = city,
                         country = country,
                         hometown = hometown,
@@ -758,6 +787,61 @@ usersSearch <- function(q='', sort='', offset='', count='20', fields='', city=''
     response$items <- jsonlite::flatten(response$items)
 
   response
+}
+
+
+#' Helper function for working with profile fields
+#' @param fields Profile fields to return
+#' @examples \dontrun{
+#' # get list of all fields
+#' fields <- profile_fields('all')
+#'
+#' # get list of all fields except specified
+#' fields <- profile_fields('all - photo_50,photo_100,photo_200')
+#'
+#' # get only specified fields
+#' fields <- profile_fields('sex,bdate')
+#' }
+#' @export
+profile_fields <- function(fields = '') {
+  fields_set <- c('photo_id', 'verified', 'sex', 'bdate', 'city', 'country', 'home_town',
+                  'has_photo', 'photo_50', 'photo_100', 'photo_200_orig', 'photo_200',
+                  'photo_400_orig', 'photo_max', 'photo_max_orig', 'online', 'lists', 'domain',
+                  'has_mobile', 'contacts', 'site', 'education', 'universities', 'schools',
+                  'status', 'last_seen', 'followers_count', 'common_count', 'occupation',
+                  'nickname', 'relatives', 'relation', 'personal', 'connections', 'exports',
+                  'wall_comments', 'activities', 'interests', 'music', 'movies', 'tv',
+                  'books', 'games', 'about', 'quotes', 'can_post', 'can_see_all_posts',
+                  'can_see_audio', 'can_write_private_message', 'can_send_friend_request',
+                  'is_favorite', 'is_hidden_from_feed', 'timezone', 'screen_name', 'maiden_name',
+                  'crop_photo', 'is_friend', 'friend_status', 'career', 'military', 'blacklisted',
+                  'blacklisted_by_me')
+
+  if (fields == '')
+    return(fields)
+  if (fields == 'all')
+    return(paste(fields_set, collapse = ','))
+
+  trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
+  selected_fields <- strsplit(fields, '-')
+  selected_fields <- trim(selected_fields[[1]])
+  if (length(selected_fields) > 1) {
+    selected_fields <- strsplit(selected_fields[-1], ',')[[1]]
+    incorrect_fields <- setdiff(selected_fields, fields_set)
+    if (length(incorrect_fields) != 0)
+      warning("This fields are incorrect: ", paste(incorrect_fields, collapse = ','), call. = FALSE)
+    fields <- setdiff(fields_set, selected_fields)
+    return(paste(fields, collapse = ','))
+  }
+
+  fields <- strsplit(fields, ',')[[1]]
+  fields <- trim(fields)
+  incorrect_fields <- fields[!fields %in% fields_set]
+  fields <- setdiff(fields, incorrect_fields)
+  if (length(incorrect_fields) != 0)
+    warning("This fields are incorrect: ", paste(incorrect_fields, collapse = ','), call. = FALSE)
+  paste(fields, collapse = ',')
 }
 
 

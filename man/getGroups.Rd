@@ -4,8 +4,15 @@
 \alias{getGroups}
 \title{Returns a list of the communities to which a user belongs}
 \usage{
-getGroups(user_id = "", extended = "", filter = "", fields = "",
-  offset = "", count = "", v = getAPIVersion())
+getGroups(
+  user_id = "",
+  extended = "",
+  filter = "",
+  fields = "",
+  offset = "",
+  count = "",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{user_id}{User ID}
@@ -30,4 +37,3 @@ Returns a list of the communities to which a user belongs
 groups <- getGroups(me(), extended = 1, fields = 'city')
 }
 }
-

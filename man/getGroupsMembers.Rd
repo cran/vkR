@@ -4,8 +4,15 @@
 \alias{getGroupsMembers}
 \title{Returns a list of community members}
 \usage{
-getGroupsMembers(group_id = "", sort = "", offset = "", count = "",
-  fields = "", filter = "", v = getAPIVersion())
+getGroupsMembers(
+  group_id = "",
+  sort = "",
+  offset = "",
+  count = "",
+  fields = "",
+  filter = "",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{group_id}{ID or screen name of the community}
@@ -30,4 +37,3 @@ Returns a list of community members
 members <- getGroupsMembers(1, fields='sex,bdate,city')
 }
 }
-

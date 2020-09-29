@@ -4,8 +4,14 @@
 \alias{getGroupsForUsers}
 \title{Returns a list of the communities for the specified users}
 \usage{
-getGroupsForUsers(users, extended = "", filter = "", fields = "",
-  progress_bar = FALSE, v = getAPIVersion())
+getGroupsForUsers(
+  users,
+  extended = "",
+  filter = "",
+  fields = "",
+  progress_bar = FALSE,
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{users}{A list of users}
@@ -28,4 +34,3 @@ Returns a list of the communities for the specified users
 members <- getGroupsForUsers(c(me(), 123456), extended = 1, fields='city', progress_bar = TRUE)
 }
 }
-

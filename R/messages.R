@@ -96,7 +96,7 @@ messagesGetHistoryExecute <- function(offset=0, count=0, user_id='', peer_id='',
                                 count = (max_count - nrow(messages)),
                                 offset = (1 + offset + offset_counter * 600),
                                 v = v)
-    messages <- jsonlite::rbind.pages(list(messages, messages600))
+    messages <- jsonlite::rbind_pages(list(messages, messages600))
 
     if (progress_bar)
       setTxtProgressBar(pb, nrow(messages))
@@ -151,6 +151,59 @@ messagesGet <- function(out='', offset='', count='', time_offset='', filters='',
                         v = v)
   request_delay()
   response <- jsonlite::fromJSON(query)
+
+  if (has_error(response))
+    return(try_handle_error(response))
+
+  response$response
+}
+
+
+#' Sends a message.
+#' @param user_id User ID (by default — current user).
+#' @param random_id Unique identifier to avoid resending the message.
+#' @param peer_id Destination ID.
+#' @param domain User's short address (for example, illarionov).
+#' @param chat_id ID of conversation the message will relate to.
+#' @param user_ids IDs of message recipients (if new conversation shall be started).
+#' @param message Text of the message (required if attachments is not set).
+#' @param lat Geographical latitude of a check-in, in degrees (from -90 to 90).
+#' @param long Geographical longitude of a check-in, in degrees (from -180 to 180).
+#' @param attachment List of objects attached to the message, separated by commas, in the following format: <type><owner_id>_<media_id>
+#'
+#' <type> — Type of media attachment:
+#' \itemize{
+#'  \item photo - photo
+#'  \item video - video
+#'  \item audio - audio
+#'  \item doc - document
+#'  \item wall - wall post
+#' }
+#'
+#' <owner_id> — ID of the media attachment owner.
+#'
+#' <media_id> — media attachment ID.
+#' @param forward_messages ID of forwarded messages, separated with a comma. Listed messages of the sender will be shown in the message body at the recipient's.
+#' @param sticker_id Sticker id.
+#' @param v Version of API.
+#' @export
+messagesSend <- function(user_id, random_id='', peer_id='', domain='', chat_id='', user_ids='', message='', lat='', long='', attachment='', forward_messages='', sticker_id='', v=getAPIVersion()) {
+  query <- queryBuilder('messages.send',
+                        user_id = user_id,
+                        random_id = random_id,
+                        peer_id = peer_id,
+                        domain = domain,
+                        chat_id = chat_id,
+                        user_ids = user_ids,
+                        message = message,
+                        lat = lat,
+                        long = long,
+                        attachment = attachment,
+                        forward_messages = forward_messages,
+                        sticker_id = sticker_id,
+                        v = v)
+  request_delay()
+  response <- jsonlite::fromJSON(URLencode(query))
 
   if (has_error(response))
     return(try_handle_error(response))

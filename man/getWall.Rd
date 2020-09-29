@@ -4,8 +4,16 @@
 \alias{getWall}
 \title{Returns a list of posts on a user wall or community wall}
 \usage{
-getWall(owner_id = "", domain = "", offset = "", count = "",
-  filter = "owner", extended = "", fields = "", v = getAPIVersion())
+getWall(
+  owner_id = "",
+  domain = "",
+  offset = "",
+  count = "",
+  filter = "owner",
+  extended = "",
+  fields = "",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{owner_id}{ID of the user or community that owns the wall. By default, current user ID. Use a negative value to designate a community ID.}
@@ -48,4 +56,3 @@ Returns a list of posts on a user wall or community wall
 wall <- getWall(domain='spbrug', count=10, progress_bar=TRUE)
 }
 }
-

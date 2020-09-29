@@ -4,8 +4,14 @@
 \alias{databaseGetUniversities}
 \title{Returns a list of higher education institutions}
 \usage{
-databaseGetUniversities(q = "", country_id = "", city_id = "",
-  offset = "", count = "100", v = getAPIVersion())
+databaseGetUniversities(
+  q = "",
+  country_id = "",
+  city_id = "",
+  offset = "",
+  count = "100",
+  v = getAPIVersion()
+)
 }
 \arguments{
 \item{q}{Search query}
@@ -28,4 +34,3 @@ Returns a list of higher education institutions
 databaseGetUniversities(city_id = '2')
 }
 }
-
